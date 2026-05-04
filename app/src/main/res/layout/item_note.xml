@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="12dp">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/noteCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="14dp"
+        app:cardMaxElevation="18dp"
+        app:cardBackgroundColor="#00000000"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:id="@+id/noteContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#B3FFFFFF"
+            android:orientation="vertical"
+            android:padding="22dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/urgentBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="#D32F2F"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:text="URGENT"
+                    android:textColor="#FFFFFF"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    android:layout_marginEnd="8dp"/>
+
+                <TextView
+                    android:id="@+id/deadlineText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:alpha="0.8"
+                    android:textColor="#C62828"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"/>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/noteContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:lineSpacingExtra="5dp"
+                android:text="Note content goes here..."
+                android:textColor="#1A1A1A"
+                android:textSize="14sp" />
+
+            <ImageView
+                android:id="@+id/lockIcon"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:src="@android:drawable/ic_lock_lock"
+                app:tint="#424242"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/noteTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="16dp"
+                android:alpha="0.3"
+                android:text="10:00 AM"
+                android:textColor="#000000"
+                android:textSize="9sp" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <ImageView
+        android:id="@+id/pinIcon"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:src="@drawable/ic_pin"
+        app:layout_constraintBottom_toTopOf="@id/noteCard"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/noteCard" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

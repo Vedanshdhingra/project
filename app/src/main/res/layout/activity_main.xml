@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/main_background"
+    tools:context=".MainActivity">
+
+    <!-- Integrated Top Navigation Bar -->
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:background="#0DFFFFFF"
+        android:orientation="horizontal"
+        android:paddingTop="12dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tabNotes"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="NOTES"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.15"
+                android:background="?attr/selectableItemBackground" />
+
+            <View
+                android:id="@+id/indicatorNotes"
+                android:layout_width="40dp"
+                android:layout_height="2dp"
+                android:background="#FFFFFF"
+                android:visibility="visible" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center_vertical"
+            android:background="#15FFFFFF" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tabTasks"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="TASKS"
+                android:textColor="#40FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.15"
+                android:background="?attr/selectableItemBackground" />
+
+            <View
+                android:id="@+id/indicatorTasks"
+                android:layout_width="40dp"
+                android:layout_height="2dp"
+                android:background="#FFFFFF"
+                android:visibility="invisible" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <EditText
+        android:id="@+id/searchEditText"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/search_bg"
+        android:hint="Search your universe..."
+        android:textColor="#FFFFFF"
+        android:textColorHint="#4DFFFFFF"
+        android:inputType="text"
+        android:textSize="13sp"
+        android:drawableStart="@android:drawable/ic_menu_search"
+        android:drawablePadding="10dp"
+        android:drawableTint="#80FFFFFF"
+        app:layout_constraintTop_toBottomOf="@id/topBar" />
+
+    <!-- Notes Section -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewNotes"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:padding="12dp"
+        android:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/searchEditText" />
+
+    <!-- Tasks Section -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewTasks"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:padding="16dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/searchEditText" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAdd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="32dp"
+        android:src="@android:drawable/ic_input_add"
+        app:backgroundTint="#FFD54F"
+        app:elevation="8dp"
+        app:pressedTranslationZ="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:tint="#000000"
+        android:contentDescription="Add New" />
+
+    <!-- Blur Overlay -->
+    <View
+        android:id="@+id/blurOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#CC000000"
+        android:visibility="gone"
+        android:elevation="40dp" />
+
+    <!-- Focused Container -->
+    <FrameLayout
+        android:id="@+id/focusedContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:elevation="41dp"
+        android:visibility="gone"
+        android:padding="32dp" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
