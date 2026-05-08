@@ -41,6 +41,8 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.material)
     implementation(libs.mlkit.text.recognition)
+    implementation("androidx.room:room-runtime:2.6.1")
+    annotationProcessor("androidx.room:room-compiler:2.6.1")
     implementation(libs.androidx.biometric)
     testImplementation(libs.junit)
     androidTestImplementation(libs.espresso.core)

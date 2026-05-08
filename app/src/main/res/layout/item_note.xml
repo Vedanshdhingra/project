@@ -3,100 +3,120 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="12dp">
+    android:padding="8dp">
 
-    <androidx.cardview.widget.CardView
-        android:id="@+id/noteCard"
+    <FrameLayout
+        android:id="@+id/noteContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        app:cardCornerRadius="14dp"
-        app:cardElevation="14dp"
-        app:cardMaxElevation="18dp"
-        app:cardBackgroundColor="#00000000"
+        android:background="@drawable/glass_card_bg"
+        android:padding="20dp"
         app:layout_constraintTop_toTopOf="parent">
 
+        <!-- Locked View -->
         <LinearLayout
-            android:id="@+id/noteContainer"
+            android:id="@+id/lockedView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#B3FFFFFF"
+            android:gravity="center"
             android:orientation="vertical"
-            android:padding="22dp">
+            android:visibility="visible">
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@android:drawable/ic_lock_idle_lock"
+                app:tint="#D1C4E9" />
+
+            <TextView
+                android:id="@+id/lockedTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Secret note"
+                android:textColor="#D1C4E9"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:alpha="0.6"
+                android:text="Tap to authenticate"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Unlocked View -->
+        <LinearLayout
+            android:id="@+id/unlockedView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:src="@android:drawable/ic_lock_idle_lock"
+                    app:tint="#81C784" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="UNLOCKED"
+                    android:textColor="#81C784"
+                    android:textSize="10sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/noteTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:id="@+id/urgentBadge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="#D32F2F"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:text="URGENT"
-                    android:textColor="#FFFFFF"
-                    android:textSize="9sp"
-                    android:textStyle="bold"
-                    android:visibility="gone"
-                    android:layout_marginEnd="8dp"/>
-
-                <TextView
-                    android:id="@+id/deadlineText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:alpha="0.8"
-                    android:textColor="#C62828"
-                    android:textSize="10sp"
-                    android:textStyle="bold"
-                    android:visibility="gone"/>
-            </LinearLayout>
+                android:layout_marginTop="8dp"
+                android:text="Private Journal"
+                android:textColor="#00E5FF"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/noteContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:lineSpacingExtra="5dp"
-                android:text="Note content goes here..."
-                android:textColor="#1A1A1A"
-                android:textSize="14sp" />
-
-            <ImageView
-                android:id="@+id/lockIcon"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_gravity="center"
                 android:layout_marginTop="8dp"
-                android:src="@android:drawable/ic_lock_lock"
-                app:tint="#424242"
-                android:visibility="gone" />
+                android:lineSpacingExtra="4dp"
+                android:text="Personal reflections &amp; daily notes..."
+                android:textColor="#E0E0E0"
+                android:textSize="14sp" />
 
             <TextView
                 android:id="@+id/noteTime"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="end"
                 android:layout_marginTop="16dp"
-                android:alpha="0.3"
-                android:text="10:00 AM"
-                android:textColor="#000000"
-                android:textSize="9sp" />
-
+                android:alpha="0.5"
+                android:text="Updated 2h ago"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp" />
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
+    </FrameLayout>
 
     <ImageView
         android:id="@+id/pinIcon"
-        android:layout_width="26dp"
-        android:layout_height="26dp"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
         android:src="@drawable/ic_pin"
-        app:layout_constraintBottom_toTopOf="@id/noteCard"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/noteCard" />
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

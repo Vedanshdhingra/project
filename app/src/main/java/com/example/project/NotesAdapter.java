@@ -1,12 +1,10 @@
 package com.example.project;
 
 import android.text.format.DateFormat;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -20,6 +18,7 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
     private List<Note> notes;
     private List<Note> filteredNotes;
     private OnNoteClickListener listener;
+    private boolean showOnlySecret = false;
 
     public interface OnNoteClickListener {
         void onNoteClick(Note note, int position);
@@ -41,73 +40,39 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
     @Override
     public void onBindViewHolder(@NonNull NoteViewHolder holder, int position) {
         Note note = filteredNotes.get(position);
-        holder.container.setBackgroundColor(note.color);
 
-        if (note.isSecret) {
-            holder.content.setVisibility(View.GONE);
-            holder.lockIcon.setVisibility(View.VISIBLE);
-            holder.time.setVisibility(View.GONE);
-            holder.deadlineText.setVisibility(View.GONE);
-            holder.urgentBadge.setVisibility(View.GONE);
+        if (note.isSecret && !note.sessionUnlocked) {
+            holder.lockedView.setVisibility(View.VISIBLE);
+            holder.unlockedView.setVisibility(View.GONE);
+            holder.container.setBackgroundResource(R.drawable.glass_card_bg);
+            holder.lockedTitle.setText(note.title == null || note.title.isEmpty() ? "Secret note" : note.title);
         } else {
-            holder.content.setVisibility(View.VISIBLE);
-            holder.lockIcon.setVisibility(View.GONE);
-            holder.time.setVisibility(View.VISIBLE);
-            holder.content.setText(note.content);
+            holder.lockedView.setVisibility(View.GONE);
+            holder.unlockedView.setVisibility(View.VISIBLE);
+            
+            if (note.isSecret) {
+                holder.container.setBackgroundResource(R.drawable.glass_card_unlocked_bg);
+                holder.noteTitle.setTextColor(0xFF00E5FF); // Cyan for secret
+            } else {
+                holder.container.setBackgroundResource(R.drawable.glass_card_bg);
+                holder.noteTitle.setTextColor(0xFFFFFFFF);
+            }
+
+            holder.noteTitle.setText(note.title == null || note.title.isEmpty() ? "Untilted Note" : note.title);
+            holder.noteContent.setText(note.content);
 
             Calendar cal = Calendar.getInstance(Locale.ENGLISH);
             cal.setTimeInMillis(note.lastModified);
             String date = DateFormat.format("hh:mm a", cal).toString();
-            holder.time.setText(date);
-
-            // Deadline Handling
-            if (note.deadline != null) {
-                holder.deadlineText.setVisibility(View.VISIBLE);
-                cal.setTimeInMillis(note.deadline);
-                String deadlineStr = DateFormat.format("dd MMM, hh:mm a", cal).toString();
-                holder.deadlineText.setText("⏰ " + deadlineStr);
-                
-                if (note.isUrgent()) {
-                    holder.urgentBadge.setVisibility(View.VISIBLE);
-                    holder.container.setPadding(30, 30, 30, 30); // Visually "bigger"
-                    holder.content.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16); // Scale up content
-                } else {
-                    holder.urgentBadge.setVisibility(View.GONE);
-                    holder.container.setPadding(20, 20, 20, 20);
-                    holder.content.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-                }
-            } else {
-                holder.deadlineText.setVisibility(View.GONE);
-                holder.urgentBadge.setVisibility(View.GONE);
-                holder.container.setPadding(20, 20, 20, 20);
-                holder.content.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
-            }
+            holder.noteTime.setText("Updated " + date);
         }
 
-        // Interactive Depth
-        holder.itemView.setOnTouchListener((v, event) -> {
-            switch (event.getAction()) {
-                case android.view.MotionEvent.ACTION_DOWN:
-                    v.animate().scaleX(1.02f).scaleY(1.02f).setDuration(100).start();
-                    v.setElevation(20f);
-                    break;
-                case android.view.MotionEvent.ACTION_UP:
-                case android.view.MotionEvent.ACTION_CANCEL:
-                    v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start();
-                    v.setElevation(12f);
-                    break;
-            }
-            return false;
-        });
-        
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 int originalPos = notes.indexOf(note);
                 listener.onNoteClick(note, originalPos);
             }
         });
-
-        holder.itemView.setAlpha(note.isPinned ? 1.0f : 0.9f);
     }
 
     @Override
@@ -117,47 +82,46 @@ public class NotesAdapter extends RecyclerView.Adapter<NotesAdapter.NoteViewHold
 
     public void filter(String query) {
         filteredNotes.clear();
-        if (query.isEmpty()) {
-            filteredNotes.addAll(notes);
-        } else {
-            String lowerQuery = query.toLowerCase();
-            for (Note note : notes) {
-                if (note.content.toLowerCase().contains(lowerQuery) || 
-                    (note.title != null && note.title.toLowerCase().contains(lowerQuery))) {
-                    filteredNotes.add(note);
-                }
+        for (Note note : notes) {
+            boolean matchesQuery = query.isEmpty() || 
+                                   note.content.toLowerCase().contains(query.toLowerCase()) || 
+                                   (note.title != null && note.title.toLowerCase().contains(query.toLowerCase()));
+            
+            boolean matchesSecretFilter = !showOnlySecret || note.isSecret;
+            
+            if (matchesQuery && matchesSecretFilter) {
+                filteredNotes.add(note);
             }
         }
         notifyDataSetChanged();
     }
 
+    public void setShowOnlySecret(boolean onlySecret) {
+        this.showOnlySecret = onlySecret;
+        filter("");
+    }
+
     public void sortAndNotify() {
         Collections.sort(notes, (n1, n2) -> {
-            // Urgency/Deadline sorting
-            if (n1.isUrgent() != n2.isUrgent()) {
-                return n1.isUrgent() ? -1 : 1;
-            }
-            if (n1.isPinned != n2.isPinned) {
-                return n1.isPinned ? -1 : 1;
-            }
+            if (n1.isPinned != n2.isPinned) return n1.isPinned ? -1 : 1;
             return Long.compare(n2.lastModified, n1.lastModified);
         });
         filter("");
     }
 
     static class NoteViewHolder extends RecyclerView.ViewHolder {
-        TextView content, time, deadlineText, urgentBadge;
-        ImageView lockIcon;
-        LinearLayout container;
+        TextView noteTitle, noteContent, noteTime, lockedTitle;
+        View lockedView, unlockedView, container;
 
         public NoteViewHolder(@NonNull View itemView) {
             super(itemView);
-            content = itemView.findViewById(R.id.noteContent);
-            time = itemView.findViewById(R.id.noteTime);
-            deadlineText = itemView.findViewById(R.id.deadlineText);
-            urgentBadge = itemView.findViewById(R.id.urgentBadge);
-            lockIcon = itemView.findViewById(R.id.lockIcon);
             container = itemView.findViewById(R.id.noteContainer);
+            lockedView = itemView.findViewById(R.id.lockedView);
+            unlockedView = itemView.findViewById(R.id.unlockedView);
+            noteTitle = itemView.findViewById(R.id.noteTitle);
+            noteContent = itemView.findViewById(R.id.noteContent);
+            noteTime = itemView.findViewById(R.id.noteTime);
+            lockedTitle = itemView.findViewById(R.id.lockedTitle);
         }
     }
 }

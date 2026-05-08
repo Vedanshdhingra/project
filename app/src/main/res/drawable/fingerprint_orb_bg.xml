@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Outer Glow -->
+    <item>
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="60dp"
+                android:startColor="#807E57C2"
+                android:endColor="#007E57C2" />
+        </shape>
+    </item>
+    <!-- Inner Sphere -->
+    <item android:top="10dp" android:bottom="10dp" android:left="10dp" android:right="10dp">
+        <shape android:shape="oval">
+            <solid android:color="#4D000000" />
+            <stroke android:width="2dp" android:color="#60D1C4E9" />
+        </shape>
+    </item>
+</layer-list>

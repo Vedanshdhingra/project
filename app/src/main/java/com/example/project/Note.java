@@ -1,13 +1,21 @@
 package com.example.project;
 
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+
+@Entity(tableName = "notes")
 public class Note {
+    @PrimaryKey(autoGenerate = true)
+    public int id;
+
     public String title;
     public String content;
     public int color;
     public long lastModified;
     public boolean isPinned;
-    public Long deadline; // Nullable, stores timestamp
+    public Long deadline;
     public boolean isSecret;
+    public boolean sessionUnlocked = false;
 
     public Note(String title, String content, int color) {
         this.title = title;
@@ -22,7 +30,6 @@ public class Note {
     public boolean isUrgent() {
         if (deadline == null) return false;
         long now = System.currentTimeMillis();
-        // Urgent if deadline is within next 12 hours or already passed
         return deadline - now < 12 * 60 * 60 * 1000;
     }
 }

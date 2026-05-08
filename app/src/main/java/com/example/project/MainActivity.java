@@ -29,8 +29,6 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.recyclerview.widget.ItemTouchHelper;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -40,7 +38,6 @@ import com.google.mlkit.vision.text.TextRecognizer;
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
@@ -49,16 +46,12 @@ import java.util.concurrent.Executor;
 public class MainActivity extends AppCompatActivity {
 
     private List<Note> notes;
-    private List<Task> tasks;
     private NotesAdapter notesAdapter;
-    private TasksAdapter tasksAdapter;
-    
+    private AppDao dao;
     private View blurOverlay;
     private FrameLayout focusedContainer;
-    private RecyclerView rvNotes, rvTasks;
-    private TextView tabNotes, tabTasks;
-    private View indicatorNotes, indicatorTasks;
-    private boolean isNotesActive = true;
+    private RecyclerView rvNotes;
+    private TextView btnSecretFilter, btnAllFilter;
     
     // OCR components
     private TextRecognizer textRecognizer;
@@ -96,10 +89,9 @@ public class MainActivity extends AppCompatActivity {
         initOCR();
         initBiometric();
         initViews();
-        setupTabs();
+        setupFilters();
+        dao = AppDatabase.getInstance(this).appDao();
         setupNotes();
-        setupTasks();
-        setupSearch();
     }
 
     private void initOCR() {
@@ -123,13 +115,13 @@ public class MainActivity extends AppCompatActivity {
     private void initBiometric() {
         executor = ContextCompat.getMainExecutor(this);
         promptInfo = new BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Secret Note Access")
-                .setSubtitle("Authenticate to view your secret note")
+                .setTitle("Project Universe Authentication")
+                .setSubtitle("Authenticate to unlock your secret universe")
                 .setNegativeButtonText("Cancel")
                 .build();
     }
 
-    private void authenticateSecretNote(Note note, int position) {
+    private void authenticateNote(Note note, int position) {
         biometricPrompt = new BiometricPrompt(MainActivity.this, executor, new BiometricPrompt.AuthenticationCallback() {
             @Override
             public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
@@ -140,6 +132,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
                 super.onAuthenticationSucceeded(result);
+                note.sessionUnlocked = true;
+                notesAdapter.notifyItemChanged(position);
                 showNoteEditMode(note, position);
             }
 
@@ -172,125 +166,72 @@ public class MainActivity extends AppCompatActivity {
         blurOverlay = findViewById(R.id.blurOverlay);
         focusedContainer = findViewById(R.id.focusedContainer);
         rvNotes = findViewById(R.id.recyclerViewNotes);
-        rvTasks = findViewById(R.id.recyclerViewTasks);
-        tabNotes = findViewById(R.id.tabNotes);
-        tabTasks = findViewById(R.id.tabTasks);
-        indicatorNotes = findViewById(R.id.indicatorNotes);
-        indicatorTasks = findViewById(R.id.indicatorTasks);
-        FloatingActionButton fabAdd = findViewById(R.id.fabAdd);
+        btnSecretFilter = findViewById(R.id.btnSecretFilter);
+        btnAllFilter = findViewById(R.id.btnAllFilter);
+        View fingerprintBtn = findViewById(R.id.fingerprintContainer);
 
-        fabAdd.setOnClickListener(v -> {
-            if (isNotesActive) createNewNote();
-            else createNewTask();
-        });
-
+        fingerprintBtn.setOnClickListener(v -> createNewNote());
         blurOverlay.setOnClickListener(v -> hideEditMode());
     }
 
-    private void setupTabs() {
-        tabNotes.setOnClickListener(v -> switchTab(true));
-        tabTasks.setOnClickListener(v -> switchTab(false));
-    }
+    private void setupFilters() {
+        btnSecretFilter.setOnClickListener(v -> {
+            notesAdapter.setShowOnlySecret(true);
+            btnSecretFilter.setAlpha(1.0f);
+            btnAllFilter.setAlpha(0.5f);
+        });
 
-    private void switchTab(boolean toNotes) {
-        isNotesActive = toNotes;
+        btnAllFilter.setOnClickListener(v -> {
+            notesAdapter.setShowOnlySecret(false);
+            btnSecretFilter.setAlpha(0.5f);
+            btnAllFilter.setAlpha(1.0f);
+        });
         
-        // Typography & Indicators
-        tabNotes.setTextColor(toNotes ? 0xFFFFFFFF : 0x40FFFFFF);
-        tabTasks.setTextColor(toNotes ? 0x40FFFFFF : 0xFFFFFFFF);
-        indicatorNotes.setVisibility(toNotes ? View.VISIBLE : View.INVISIBLE);
-        indicatorTasks.setVisibility(toNotes ? View.INVISIBLE : View.VISIBLE);
-        
-        rvNotes.setVisibility(toNotes ? View.VISIBLE : View.GONE);
-        rvTasks.setVisibility(toNotes ? View.GONE : View.VISIBLE);
-        
-        EditText search = findViewById(R.id.searchEditText);
-        search.setHint(toNotes ? "Search notes..." : "Search tasks...");
+        btnAllFilter.setAlpha(1.0f);
+        btnSecretFilter.setAlpha(0.5f);
     }
 
     private void setupNotes() {
-        notes = new ArrayList<>();
-        notes.add(new Note("Design System", "Implement glassmorphism theme with deep ocean gradients.", 0xCCE3F2FD));
-        notes.add(new Note("Priority Task", "The deadline system now supports visual scaling for urgent items.", 0xCCFFEBEE));
-        notes.get(1).deadline = System.currentTimeMillis() + 3600000;
-        notes.get(1).isPinned = true;
+        notes = dao.getAllNotes();
+        
+        if (notes.isEmpty()) {
+            // First time setup - add default notes
+            Note n1 = new Note("Secret note", "Top secret mission details.", 0xCCFFEBEE);
+            n1.isSecret = true;
+            n1.id = (int) dao.insertNote(n1);
+            notes.add(n1);
+
+            Note n2 = new Note("Secret note", "Another hidden universe.", 0xCCE3F2FD);
+            n2.isSecret = true;
+            n2.id = (int) dao.insertNote(n2);
+            notes.add(n2);
+
+            Note n3 = new Note("Private Journal", "Personal reflections & daily notes. Today: feeling inspired after the product kickoff. Team morale is high.", 0xCCE3F2FD);
+            n3.isSecret = true;
+            n3.sessionUnlocked = true;
+            n3.id = (int) dao.insertNote(n3);
+            notes.add(n3);
+        }
         
         notesAdapter = new NotesAdapter(notes, (note, position) -> {
-            if (note.isSecret) {
-                authenticateSecretNote(note, position);
+            if (note.isSecret && !note.sessionUnlocked) {
+                authenticateNote(note, position);
             } else {
                 showNoteEditMode(note, position);
             }
         });
         rvNotes.setLayoutManager(new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL));
         rvNotes.setAdapter(notesAdapter);
-        
-        // Enhanced 3D Perspective
-        rvNotes.setCameraDistance(15000f);
-        rvNotes.setRotationY(-12f);
-        rvNotes.setRotationX(6f);
-
-        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
-                ItemTouchHelper.UP | ItemTouchHelper.DOWN | ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT, 0) {
-            @Override
-            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
-                int fromPos = viewHolder.getAdapterPosition();
-                int toPos = target.getAdapterPosition();
-                Collections.swap(notes, fromPos, toPos);
-                notesAdapter.notifyItemMoved(fromPos, toPos);
-                return true;
-            }
-            @Override
-            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {}
-        }).attachToRecyclerView(rvNotes);
-    }
-
-    private void setupTasks() {
-        tasks = new ArrayList<>();
-        tasks.add(new Task("Check out the new Task feature", "Tasks have deadlines and reminders!", null));
-        
-        tasksAdapter = new TasksAdapter(tasks, new TasksAdapter.OnTaskClickListener() {
-            @Override
-            public void onTaskClick(Task task, int position) {
-                showTaskEditMode(task, position);
-            }
-            @Override
-            public void onTaskStatusChanged(Task task, int position) {
-                // Handle completion
-            }
-        });
-        rvTasks.setLayoutManager(new LinearLayoutManager(this));
-        rvTasks.setAdapter(tasksAdapter);
-    }
-
-    private void setupSearch() {
-        EditText search = findViewById(R.id.searchEditText);
-        search.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (isNotesActive) notesAdapter.filter(s.toString());
-                // Simple task filter logic could be added here
-            }
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
+        notesAdapter.sortAndNotify();
     }
 
     private void createNewNote() {
         int randomColor = noteColors[new Random().nextInt(noteColors.length)];
         Note newNote = new Note("", "", randomColor);
+        newNote.id = (int) dao.insertNote(newNote);
         notes.add(0, newNote);
         notesAdapter.sortAndNotify();
-        showNoteEditMode(newNote, notes.indexOf(newNote));
-    }
-
-    private void createNewTask() {
-        Task newTask = new Task("", "", null);
-        tasks.add(0, newTask);
-        tasksAdapter.notifyItemInserted(0);
-        showTaskEditMode(newTask, 0);
+        showNoteEditMode(newNote, 0);
     }
 
     private void showNoteEditMode(Note note, int position) {
@@ -319,6 +260,7 @@ public class MainActivity extends AppCompatActivity {
                 note.title = editTitle.getText().toString();
                 note.content = editContent.getText().toString();
                 note.lastModified = System.currentTimeMillis();
+                dao.updateNote(note);
                 notesAdapter.notifyItemChanged(position);
             }
             @Override public void afterTextChanged(Editable s) {}
@@ -328,18 +270,24 @@ public class MainActivity extends AppCompatActivity {
 
         btnPin.setOnClickListener(v -> {
             note.isPinned = !note.isPinned;
+            note.lastModified = System.currentTimeMillis();
+            dao.updateNote(note);
             updatePinButton(btnPin, note.isPinned);
             notesAdapter.sortAndNotify();
         });
 
         btnLock.setOnClickListener(v -> {
             note.isSecret = !note.isSecret;
+            note.lastModified = System.currentTimeMillis();
+            dao.updateNote(note);
             updateLockButton(btnLock, note.isSecret);
             notesAdapter.notifyItemChanged(position);
         });
 
         btnDeadline.setOnClickListener(v -> showDateTimePicker((date) -> {
             note.deadline = date;
+            note.lastModified = System.currentTimeMillis();
+            dao.updateNote(note);
             notesAdapter.sortAndNotify();
         }));
 
@@ -349,6 +297,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnDelete.setOnClickListener(v -> {
+            dao.deleteNote(note);
             notes.remove(note);
             notesAdapter.sortAndNotify();
             hideEditMode();
@@ -363,6 +312,8 @@ public class MainActivity extends AppCompatActivity {
             colorView.setBackgroundColor(color);
             colorView.setOnClickListener(v -> {
                 note.color = color;
+                note.lastModified = System.currentTimeMillis();
+                dao.updateNote(note);
                 container.setBackgroundColor(color);
                 notesAdapter.notifyItemChanged(position);
             });
@@ -378,81 +329,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             requestPermissionLauncher.launch(Manifest.permission.CAMERA);
         }
-    }
-
-    private void showTaskEditMode(Task task, int position) {
-        focusedContainer.removeAllViews();
-        View editView = LayoutInflater.from(this).inflate(R.layout.edit_task, focusedContainer, false);
-        
-        EditText editTitle = editView.findViewById(R.id.editTaskTitle);
-        EditText editDesc = editView.findViewById(R.id.editTaskDescription);
-        TextView textDeadline = editView.findViewById(R.id.textDeadlineDisplay);
-        ImageButton btnSetDeadline = editView.findViewById(R.id.btnSetDeadline);
-        CheckBox checkReminder = editView.findViewById(R.id.checkReminder);
-        Button btnDelete = editView.findViewById(R.id.btnDeleteTask);
-        Button btnSave = editView.findViewById(R.id.btnSaveTask);
-
-        editTitle.setText(task.title);
-        editDesc.setText(task.description);
-        checkReminder.setChecked(task.reminderEnabled);
-        
-        if (task.deadline != null) {
-            Calendar cal = Calendar.getInstance(Locale.ENGLISH);
-            cal.setTimeInMillis(task.deadline);
-            textDeadline.setText(DateFormat.format("dd MMM, hh:mm a", cal));
-        }
-
-        btnSetDeadline.setOnClickListener(v -> showDateTimePicker((date) -> {
-            task.deadline = date;
-            Calendar cal = Calendar.getInstance(Locale.ENGLISH);
-            cal.setTimeInMillis(date);
-            textDeadline.setText(DateFormat.format("dd MMM, hh:mm a", cal));
-            tasksAdapter.notifyItemChanged(position);
-        }));
-
-        TextWatcher taskAutoSaveWatcher = new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
-                task.title = editTitle.getText().toString();
-                task.description = editDesc.getText().toString();
-                tasksAdapter.notifyItemChanged(position);
-            }
-            @Override public void afterTextChanged(Editable s) {}
-        };
-        editTitle.addTextChangedListener(taskAutoSaveWatcher);
-        editDesc.addTextChangedListener(taskAutoSaveWatcher);
-
-        checkReminder.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            task.reminderEnabled = isChecked;
-            if (isChecked && task.deadline != null) {
-                simulateReminder(task);
-            }
-            tasksAdapter.notifyItemChanged(position);
-        });
-
-        btnSave.setOnClickListener(v -> {
-            if (task.title.isEmpty()) {
-                Toast.makeText(this, "Title is required", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            hideEditMode();
-        });
-
-        btnDelete.setOnClickListener(v -> {
-            tasks.remove(position);
-            tasksAdapter.notifyItemRemoved(position);
-            hideEditMode();
-        });
-
-        displayFocusedView(editView);
-    }
-
-    private void simulateReminder(Task task) {
-        long reminderTime = task.deadline - (60 * 60 * 1000);
-        Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(reminderTime);
-        String timeStr = DateFormat.format("hh:mm a", cal).toString();
-        Toast.makeText(this, "Reminder set for " + timeStr + " (1h before deadline)", Toast.LENGTH_LONG).show();
     }
 
     private interface OnDateSelectedListener {
